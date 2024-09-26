@@ -2,7 +2,9 @@ defmodule PhoenixWebauthnWeb.ErrorJSONTest do
   use PhoenixWebauthnWeb.ConnCase, async: true
 
   test "renders 404" do
-    assert PhoenixWebauthnWeb.ErrorJSON.render("404.json", %{}) == %{errors: %{detail: "Not Found"}}
+    assert PhoenixWebauthnWeb.ErrorJSON.render("404.json", %{}) == %{
+             errors: %{detail: "Not Found"}
+           }
   end
 
   test "renders 500" do

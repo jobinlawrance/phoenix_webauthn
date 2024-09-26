@@ -71,7 +71,6 @@ module.exports = {
     },
   },
   plugins: [
-    require("@tailwindcss/forms"),
     require("tailwindcss-animate"),
     require("flowbite/plugin"),
     // Allows prefixing tailwind classes with LiveView classes to add rules
