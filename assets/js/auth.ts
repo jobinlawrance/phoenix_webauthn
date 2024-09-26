@@ -1,8 +1,12 @@
 import {
   browserSupportsWebAuthn,
+  bufferToBase64URLString,
   startRegistration,
 } from "@simplewebauthn/browser";
-import { verifyRegistrationResponse } from "@simplewebauthn/server";
+import {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+} from "@simplewebauthn/server";
 import { PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/types";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -32,13 +36,16 @@ async function registerWebAuthnAccount(form: HTMLFormElement) {
     return;
   }
 
-  const options = getUserOptions(form);
+  const options = await getUserOptions(form);
+
+  console.log("We are here");
 
   let attResp;
   try {
     attResp = await startRegistration(options);
   } catch (error) {
     // Some basic error handling
+    console.log(error);
     throw error;
   }
   let verification;
@@ -48,6 +55,7 @@ async function registerWebAuthnAccount(form: HTMLFormElement) {
       expectedChallenge: options.challenge,
       expectedOrigin: origin,
       expectedRPID: options.rp.id,
+      requireUserVerification: false,
     });
   } catch (error) {
     console.error(error);
@@ -70,7 +78,10 @@ async function registerWebAuthnAccount(form: HTMLFormElement) {
     body.append("_csrf_token", form._csrf_token.value);
     body.append("email", form["email"].value);
     body.append("credential_id", credentialID);
-    body.append("public_key_spki", arrayBufferToBase64(credentialPublicKey));
+    body.append(
+      "public_key_spki",
+      bufferToBase64URLString(credentialPublicKey),
+    );
 
     const resp = await fetch(form.action, {
       method: "POST",
@@ -97,47 +108,24 @@ async function registerWebAuthnAccount(form: HTMLFormElement) {
     //TODO
   }
 
-  function getUserOptions(
+  async function getUserOptions(
     form: HTMLFormElement,
-  ): PublicKeyCredentialCreationOptionsJSON {
-    const options: PublicKeyCredentialCreationOptionsJSON = {
-      rp: {
-        // In reality, this would be the actual app domain.
-        id: "localhost",
-        // User-facing name of the service.
-        name: "Phoenix Passkeys",
-      },
-      user: {
-        id: generateUserID().toString(),
-        name: form["email"].value as string,
-        displayName: "",
-      },
-      pubKeyCredParams: [
-        {
-          type: "public-key",
-          // Ed25519
-          alg: -8,
-        },
-        {
-          type: "public-key",
-          // ES256
-          alg: -7,
-        },
-        {
-          type: "public-key",
-          // RS256
-          alg: -257,
-        },
-      ],
-      challenge: new Uint8Array(3).toString(),
+  ): Promise<PublicKeyCredentialCreationOptionsJSON> {
+    return generateRegistrationOptions({
+      rpID: "localhost",
+      rpName: "Phoenix Passkeys",
+      userName: form["email"].value as string,
+      // Don't prompt users for additional information about the authenticator
+      // (Recommended for smoother UX)
+      attestationType: "none",
       authenticatorSelection: {
-        authenticatorAttachment: "cross-platform",
-        // We want a discoverable credential, so that it's available when we request credentials for login.
-        // Being discoverable is what means we don't require a separate username entry step.
-        requireResidentKey: true,
+        // Defaults
+        residentKey: "preferred",
+        userVerification: "preferred",
+        // Optional
+        authenticatorAttachment: "platform",
       },
-    };
-    return options;
+    });
   }
 
   function generateUserID() {

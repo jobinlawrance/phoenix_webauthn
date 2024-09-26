@@ -16,8 +16,8 @@ defmodule PhoenixWebauthnWeb.UserRegistrationController do
         "credential_id" => credential_id,
         "public_key_spki" => public_key_spki
       }) do
-    credential_id = Base.decode64!(credential_id)
-    public_key_spki = Base.decode64!(public_key_spki)
+    credential_id = credential_id
+    public_key_spki = public_key_spki
 
     case Accounts.register_user(email, credential_id, public_key_spki) do
       {:ok, user} ->

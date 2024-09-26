@@ -337,17 +337,13 @@ defmodule PhoenixWebauthn.Accounts do
 
       %UserCredential{}
       |> UserCredential.changeset(%{
-        id:
-          case Ecto.UUID.cast(credential_id) do
-            {:ok, uuid} -> uuid
-            :error -> raise ArgumentError, "Invalid UUID: #{user.id}"
-          end,
+        credential_id: credential_id,
         public_key_spki: public_key_spki,
-        user_id:
-          case Ecto.UUID.cast(user.id) do
-            {:ok, uuid} -> uuid
-            :error -> raise ArgumentError, "Invalid UUID: #{user.id}"
-          end
+        user_id: user.id
+        # case Ecto.UUID.cast(user.id) do
+        #   {:ok, uuid} -> uuid
+        #   :error -> raise ArgumentError, "Invalid UUID: #{user.id}"
+        # end
       })
       |> Repo.insert()
       |> case do
