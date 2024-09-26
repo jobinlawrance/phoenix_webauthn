@@ -7,6 +7,7 @@ import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
+import { AuthenticatorDevice } from "@simplewebauthn/server/script/deps";
 import { PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/types";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -66,13 +67,14 @@ async function registerWebAuthnAccount(form: HTMLFormElement) {
 
   if (verified && registrationInfo) {
     // These are the values you're interested in:
-    const {
-      credentialID,
+    const { credentialID, credentialPublicKey, counter } = registrationInfo;
+
+    const newDevice: AuthenticatorDevice = {
       credentialPublicKey,
+      credentialID,
       counter,
-      credentialDeviceType,
-      credentialBackedUp,
-    } = registrationInfo;
+      transports: attResp.response.transports,
+    };
 
     const body = new FormData();
     body.append("_csrf_token", form._csrf_token.value);
@@ -82,6 +84,8 @@ async function registerWebAuthnAccount(form: HTMLFormElement) {
       "public_key_spki",
       bufferToBase64URLString(credentialPublicKey),
     );
+
+    body.append("device", JSON.stringify(newDevice));
 
     const resp = await fetch(form.action, {
       method: "POST",

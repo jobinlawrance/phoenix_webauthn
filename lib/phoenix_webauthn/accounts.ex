@@ -321,7 +321,7 @@ defmodule PhoenixWebauthn.Accounts do
   """
   require Logger
 
-  def register_user(email, credential_id, public_key_spki) do
+  def register_user(email, credential_id, public_key_spki, device) do
     Repo.transaction(fn ->
       user =
         %User{}
@@ -339,6 +339,7 @@ defmodule PhoenixWebauthn.Accounts do
       |> UserCredential.changeset(%{
         credential_id: credential_id,
         public_key_spki: public_key_spki,
+        device: device,
         user_id: user.id
         # case Ecto.UUID.cast(user.id) do
         #   {:ok, uuid} -> uuid
@@ -347,8 +348,23 @@ defmodule PhoenixWebauthn.Accounts do
       })
       |> Repo.insert()
       |> case do
-        {:ok, _credential} -> nil
-        {:error, changeset} -> Repo.rollback(changeset)
+        {:ok, _credential} ->
+          nil
+
+        {:error, changeset} ->
+          error_messages =
+            Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+              Enum.reduce(opts, msg, fn {key, value}, acc ->
+                String.replace(acc, "%{#{key}}", to_string(value))
+              end)
+            end)
+
+          error_string =
+            Enum.map_join(error_messages, ", ", fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end)
+
+          Logger.error("Failed to insert UserCredential: #{error_string}")
+
+          Repo.rollback(changeset)
       end
 
       user

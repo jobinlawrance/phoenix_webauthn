@@ -14,12 +14,13 @@ defmodule PhoenixWebauthnWeb.UserRegistrationController do
   def create(conn, %{
         "email" => email,
         "credential_id" => credential_id,
-        "public_key_spki" => public_key_spki
+        "public_key_spki" => public_key_spki,
+        "device" => device
       }) do
     credential_id = credential_id
     public_key_spki = public_key_spki
 
-    case Accounts.register_user(email, credential_id, public_key_spki) do
+    case Accounts.register_user(email, credential_id, public_key_spki, device) do
       {:ok, user} ->
         {:ok, _} =
           Accounts.deliver_user_confirmation_instructions(

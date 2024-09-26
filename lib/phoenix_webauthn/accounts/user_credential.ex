@@ -8,6 +8,7 @@ defmodule PhoenixWebauthn.Accounts.UserCredential do
   schema "user_credentials" do
     field :public_key_spki, :binary
     field :credential_id, :string
+    field :device, :string
     belongs_to :user, PhoenixWebauthn.Accounts.User
 
     timestamps(type: :utc_datetime)
@@ -16,9 +17,20 @@ defmodule PhoenixWebauthn.Accounts.UserCredential do
   def changeset(credential, attrs) do
     result =
       credential
-      |> cast(attrs, [:credential_id, :public_key_spki, :user_id])
-      |> validate_required([:credential_id, :public_key_spki, :user_id])
+      |> cast(attrs, [:credential_id, :public_key_spki, :user_id, :device])
+      |> validate_required([:credential_id, :public_key_spki, :user_id, :device])
+      |> validate_json(:device)
 
     result
+  end
+
+  defp validate_json(changeset, field) do
+    validate_change(changeset, field, fn _, value ->
+      case Jason.encode(value) do
+        # Valid JSON
+        {:ok, _} -> []
+        {:error, _} -> [{field, "must be valid JSON"}]
+      end
+    end)
   end
 end
