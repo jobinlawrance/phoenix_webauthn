@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "target": "ES2017",
+    "module": "ES2015",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "./priv/static/js",
+    "strict": true,
+    "lib": ["dom", "es6"],
+    "esModuleInterop": true
+  },
+  "include": ["js/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}
