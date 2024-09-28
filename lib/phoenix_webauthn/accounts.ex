@@ -4,6 +4,7 @@ defmodule PhoenixWebauthn.Accounts do
   """
 
   import Ecto.Query, warn: false
+  alias PhoenixWebauthn.Accounts.AuthenticatorDevice
   alias PhoenixWebauthn.Repo
 
   alias PhoenixWebauthn.Accounts.User
@@ -49,11 +50,6 @@ defmodule PhoenixWebauthn.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_user(attrs \\ %{}) do
-    %User{}
-    |> User.changeset(attrs)
-    |> Repo.insert()
-  end
 
   @doc """
   Updates a user.
@@ -323,52 +319,65 @@ defmodule PhoenixWebauthn.Accounts do
 
   def register_user(email, credential_id, public_key_spki, device) do
     Repo.transaction(fn ->
-      user =
-        %User{}
-        |> User.registration_changeset(%{email: email})
-        |> Repo.insert()
-        |> case do
-          {:ok, user} ->
-            user
+      with {:ok, user} <- create_user(email),
+           {:ok, credential} <- create_user_credential(user, credential_id, public_key_spki),
+           {:ok, _device} <- create_authenticator_device(credential, device) do
+        user
+      else
+        {:error, operation, changeset, _changes_so_far} ->
+          log_error(operation, changeset)
+          Repo.rollback({operation, changeset})
+      end
+    end)
+  end
 
-          {:error, changeset} ->
-            Repo.rollback(changeset)
-        end
+  defp create_user(email) do
+    %User{}
+    |> User.registration_changeset(%{email: email})
+    |> Repo.insert()
+  end
 
-      %UserCredential{}
-      |> UserCredential.changeset(%{
-        credential_id: credential_id,
-        public_key_spki: public_key_spki,
-        device: device,
-        user_id: user.id
-        # case Ecto.UUID.cast(user.id) do
-        #   {:ok, uuid} -> uuid
-        #   :error -> raise ArgumentError, "Invalid UUID: #{user.id}"
-        # end
+  defp create_user_credential(user, credential_id, public_key_spki) do
+    %UserCredential{}
+    |> UserCredential.changeset(%{
+      credential_id: credential_id,
+      public_key_spki: public_key_spki,
+      user_id: user.id
+    })
+    |> Repo.insert()
+  end
+
+  defp create_authenticator_device(credential, device) do
+    device_params = Jason.decode!(device)
+    credential_public_key_base64 = device_params["credentialPublicKeyBase64"]
+
+    with {:ok, credential_public_key_binary} <-
+           Base.url_decode64(credential_public_key_base64, padding: false) do
+      %AuthenticatorDevice{}
+      |> AuthenticatorDevice.changeset(%{
+        counter: device_params["counter"],
+        credential_public_key: credential_public_key_binary,
+        transports: device_params["transports"],
+        credential_id: credential.id
       })
       |> Repo.insert()
-      |> case do
-        {:ok, _credential} ->
-          nil
+    else
+      :error -> {:error, :authenticator_device, "Invalid Base64 encoding", %{}}
+    end
+  end
 
-        {:error, changeset} ->
-          error_messages =
-            Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-              Enum.reduce(opts, msg, fn {key, value}, acc ->
-                String.replace(acc, "%{#{key}}", to_string(value))
-              end)
-            end)
+  defp log_error(operation, changeset) do
+    error_messages =
+      Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+        Enum.reduce(opts, msg, fn {key, value}, acc ->
+          String.replace(acc, "%{#{key}}", to_string(value))
+        end)
+      end)
 
-          error_string =
-            Enum.map_join(error_messages, ", ", fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end)
+    error_string =
+      Enum.map_join(error_messages, ", ", fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end)
 
-          Logger.error("Failed to insert UserCredential: #{error_string}")
-
-          Repo.rollback(changeset)
-      end
-
-      user
-    end)
+    Logger.error("#{operation} failed: #{error_string}")
   end
 
   @doc """
@@ -493,7 +502,11 @@ defmodule PhoenixWebauthn.Accounts do
   end
 
   def get_credentials_by_email(email) do
-    Repo.one(from u in User, where: u.email == ^email, preload: :credentials)
+    Repo.one(
+      from u in User,
+        where: u.email == ^email,
+        preload: [credentials: :authenticator_device]
+    )
     |> case do
       %{credentials: credentials} -> credentials
       nil -> []
@@ -512,5 +525,101 @@ defmodule PhoenixWebauthn.Accounts do
         {:ok, encoded_token}
       end
     end
+  end
+
+  alias PhoenixWebauthn.Accounts.AuthenticatorDevice
+
+  @doc """
+  Returns the list of authenticator_devices.
+
+  ## Examples
+
+      iex> list_authenticator_devices()
+      [%AuthenticatorDevice{}, ...]
+
+  """
+  def list_authenticator_devices do
+    Repo.all(AuthenticatorDevice)
+  end
+
+  @doc """
+  Gets a single authenticator_device.
+
+  Raises `Ecto.NoResultsError` if the Authenticator device does not exist.
+
+  ## Examples
+
+      iex> get_authenticator_device!(123)
+      %AuthenticatorDevice{}
+
+      iex> get_authenticator_device!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_authenticator_device!(id), do: Repo.get!(AuthenticatorDevice, id)
+
+  @doc """
+  Creates a authenticator_device.
+
+  ## Examples
+
+      iex> create_authenticator_device(%{field: value})
+      {:ok, %AuthenticatorDevice{}}
+
+      iex> create_authenticator_device(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_authenticator_device(attrs \\ %{}) do
+    %AuthenticatorDevice{}
+    |> AuthenticatorDevice.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a authenticator_device.
+
+  ## Examples
+
+      iex> update_authenticator_device(authenticator_device, %{field: new_value})
+      {:ok, %AuthenticatorDevice{}}
+
+      iex> update_authenticator_device(authenticator_device, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_authenticator_device(%AuthenticatorDevice{} = authenticator_device, attrs) do
+    authenticator_device
+    |> AuthenticatorDevice.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a authenticator_device.
+
+  ## Examples
+
+      iex> delete_authenticator_device(authenticator_device)
+      {:ok, %AuthenticatorDevice{}}
+
+      iex> delete_authenticator_device(authenticator_device)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_authenticator_device(%AuthenticatorDevice{} = authenticator_device) do
+    Repo.delete(authenticator_device)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking authenticator_device changes.
+
+  ## Examples
+
+      iex> change_authenticator_device(authenticator_device)
+      %Ecto.Changeset{data: %AuthenticatorDevice{}}
+
+  """
+  def change_authenticator_device(%AuthenticatorDevice{} = authenticator_device, attrs \\ %{}) do
+    AuthenticatorDevice.changeset(authenticator_device, attrs)
   end
 end

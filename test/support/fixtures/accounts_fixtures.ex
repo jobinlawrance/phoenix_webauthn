@@ -53,4 +53,20 @@ defmodule PhoenixWebauthn.AccountsFixtures do
 
     user_token
   end
+
+  @doc """
+  Generate a authenticator_device.
+  """
+  def authenticator_device_fixture(attrs \\ %{}) do
+    {:ok, authenticator_device} =
+      attrs
+      |> Enum.into(%{
+        counter: 42,
+        credential_public_key: "some credential_public_key",
+        transports: ["option1", "option2"]
+      })
+      |> PhoenixWebauthn.Accounts.create_authenticator_device()
+
+    authenticator_device
+  end
 end

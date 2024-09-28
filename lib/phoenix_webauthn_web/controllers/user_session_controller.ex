@@ -47,13 +47,14 @@ defmodule PhoenixWebauthnWeb.UserSessionController do
     |> UserAuth.log_out_user()
   end
 
-  def credentials(conn, %{"email" => email}) do
-    ids =
-      Accounts.get_credentials_by_email(email)
-      |> Enum.map(fn cred -> Base.encode64(cred.id) end)
+  # def credentials(conn, %{"email" => email}) do
+  #   ids =
+  #     Accounts.get_credentials_by_email(email)
 
-    json(conn, ids)
-  end
+  #   # |> Enum.map(fn cred -> Base.encode64(cred.id) end)
+
+  #   json(conn, ids)
+  # end
 
   # Generate a value that will be signed by WebAuthn on the client.
   defp put_webauthn_challenge(conn) do

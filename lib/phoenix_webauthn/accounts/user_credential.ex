@@ -8,8 +8,10 @@ defmodule PhoenixWebauthn.Accounts.UserCredential do
   schema "user_credentials" do
     field :public_key_spki, :binary
     field :credential_id, :string
-    field :device, :string
     belongs_to :user, PhoenixWebauthn.Accounts.User
+
+    has_one :authenticator_device, PhoenixWebauthn.Accounts.AuthenticatorDevice,
+      foreign_key: :credential_id
 
     timestamps(type: :utc_datetime)
   end
@@ -17,9 +19,8 @@ defmodule PhoenixWebauthn.Accounts.UserCredential do
   def changeset(credential, attrs) do
     result =
       credential
-      |> cast(attrs, [:credential_id, :public_key_spki, :user_id, :device])
-      |> validate_required([:credential_id, :public_key_spki, :user_id, :device])
-      |> validate_json(:device)
+      |> cast(attrs, [:credential_id, :public_key_spki, :user_id])
+      |> validate_required([:credential_id, :public_key_spki, :user_id])
 
     result
   end

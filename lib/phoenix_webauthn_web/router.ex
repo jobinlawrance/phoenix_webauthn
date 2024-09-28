@@ -21,7 +21,7 @@ defmodule PhoenixWebauthnWeb.Router do
     post "/users/register", UserRegistrationController, :create
     get "/users/log_in", UserSessionController, :new
     post "/users/log_in", UserSessionController, :create
-    get "/users/log_in/credentials", UserSessionController, :credentials
+    post "/users/log_in/credentials", UserRegistrationController, :credentials
   end
 
   # Other scopes may use custom stacks.
