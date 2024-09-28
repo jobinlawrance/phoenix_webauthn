@@ -32,6 +32,7 @@ defmodule PhoenixWebauthn.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ecto_erd, "~> 0.6.2"},
       {:jose, "~> 1.11.10"},
       {:phoenix, "~> 1.7.14"},
       {:phoenix_ecto, "~> 4.5"},

@@ -206,9 +206,15 @@ defmodule PhoenixWebauthn.AccountsTest do
     end
 
     test "create_authenticator_device/1 with valid data creates a authenticator_device" do
-      valid_attrs = %{counter: 42, credential_public_key: "some credential_public_key", transports: ["option1", "option2"]}
+      valid_attrs = %{
+        counter: 42,
+        credential_public_key: "some credential_public_key",
+        transports: ["option1", "option2"]
+      }
 
-      assert {:ok, %AuthenticatorDevice{} = authenticator_device} = Accounts.create_authenticator_device(valid_attrs)
+      assert {:ok, %AuthenticatorDevice{} = authenticator_device} =
+               Accounts.create_authenticator_device(valid_attrs)
+
       assert authenticator_device.counter == 42
       assert authenticator_device.credential_public_key == "some credential_public_key"
       assert authenticator_device.transports == ["option1", "option2"]
@@ -220,9 +226,16 @@ defmodule PhoenixWebauthn.AccountsTest do
 
     test "update_authenticator_device/2 with valid data updates the authenticator_device" do
       authenticator_device = authenticator_device_fixture()
-      update_attrs = %{counter: 43, credential_public_key: "some updated credential_public_key", transports: ["option1"]}
 
-      assert {:ok, %AuthenticatorDevice{} = authenticator_device} = Accounts.update_authenticator_device(authenticator_device, update_attrs)
+      update_attrs = %{
+        counter: 43,
+        credential_public_key: "some updated credential_public_key",
+        transports: ["option1"]
+      }
+
+      assert {:ok, %AuthenticatorDevice{} = authenticator_device} =
+               Accounts.update_authenticator_device(authenticator_device, update_attrs)
+
       assert authenticator_device.counter == 43
       assert authenticator_device.credential_public_key == "some updated credential_public_key"
       assert authenticator_device.transports == ["option1"]
@@ -230,14 +243,22 @@ defmodule PhoenixWebauthn.AccountsTest do
 
     test "update_authenticator_device/2 with invalid data returns error changeset" do
       authenticator_device = authenticator_device_fixture()
-      assert {:error, %Ecto.Changeset{}} = Accounts.update_authenticator_device(authenticator_device, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Accounts.update_authenticator_device(authenticator_device, @invalid_attrs)
+
       assert authenticator_device == Accounts.get_authenticator_device!(authenticator_device.id)
     end
 
     test "delete_authenticator_device/1 deletes the authenticator_device" do
       authenticator_device = authenticator_device_fixture()
-      assert {:ok, %AuthenticatorDevice{}} = Accounts.delete_authenticator_device(authenticator_device)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_authenticator_device!(authenticator_device.id) end
+
+      assert {:ok, %AuthenticatorDevice{}} =
+               Accounts.delete_authenticator_device(authenticator_device)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Accounts.get_authenticator_device!(authenticator_device.id)
+      end
     end
 
     test "change_authenticator_device/1 returns a authenticator_device changeset" do
