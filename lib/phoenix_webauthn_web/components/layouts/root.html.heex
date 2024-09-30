@@ -10,6 +10,9 @@
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
     </script>
+    <script>
+      window.appEnv = <%= raw Jason.encode!(Application.get_env(:phoenix_webauthn, PhoenixWebauthnWeb.Endpoint)[:frontend_env] || %{}) %>;
+    </script>
   </head>
   <body class="dark dark:bg-gray-900">
     <%= @inner_content %>

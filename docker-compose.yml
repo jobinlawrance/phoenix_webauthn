@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  phoenix:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # Variables to connect to our Postgres server.
+      PGUSER: postgres
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: elixir_passkeys
+      PGPORT: 5432
+      # Hostname of our Postgres container.
+      PGHOST: ${DB_HOSTNAME}
+      PHX_HOST: ${PHX_HOST:-localhost}
+    ports:
+      - "4000:4000"
+
+volumes:
+  postgres_data:

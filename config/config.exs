@@ -13,14 +13,18 @@ config :phoenix_webauthn,
 
 # Configures the endpoint
 config :phoenix_webauthn, PhoenixWebauthnWeb.Endpoint,
-  url: [host: "localhost"],
+  url: [host: nil, port: 443, scheme: "https"],
+  static_url: [host: nil, port: 443, scheme: "https"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: PhoenixWebauthnWeb.ErrorHTML, json: PhoenixWebauthnWeb.ErrorJSON],
     layout: false
   ],
   pubsub_server: PhoenixWebauthn.PubSub,
-  live_view: [signing_salt: "qfxZkzUk"]
+  live_view: [signing_salt: "qfxZkzUk"],
+  frontend_env: %{
+    "PHX_HOST" => System.get_env("PHX_HOST") || "localhost"
+  }
 
 # Configures the mailer
 #
@@ -64,3 +68,7 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+
+# Add this to the end of your config file
+config :phoenix_webauthn, PhoenixWebauthnWeb.Endpoint,
+  url: [host: System.get_env("PHX_HOST") || "localhost"]

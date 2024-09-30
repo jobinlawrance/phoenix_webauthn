@@ -8,7 +8,13 @@ config :phoenix_webauthn, PhoenixWebauthn.Repo,
   database: "elixir_passkeys",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  pool_size: 10,
+  ssl: true,
+  ssl_opts: [
+    verify: :verify_peer,
+    cacertfile: "assets/global-bundle.pem",
+    server_name_indication: ~c"database-1.c1mwwoq6mxu5.us-east-1.rds.amazonaws.com"
+  ]
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -19,7 +25,7 @@ config :phoenix_webauthn, PhoenixWebauthn.Repo,
 config :phoenix_webauthn, PhoenixWebauthnWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: 4000],
+  http: [ip: {0, 0, 0, 0}, port: 4000],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,

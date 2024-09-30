@@ -22,7 +22,41 @@ import {
 import { PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/types";
 import axios from "axios";
 
-const rpID = "localhost";
+function extractRPID(host: string) {
+  // Check if the host is a valid URL
+  let url;
+  try {
+    url = new URL(host);
+  } catch (e) {
+    // If it's not a valid URL, assume it's just a domain
+    url = new URL(`https://${host}`);
+  }
+
+  // Extract the hostname
+  let hostname = url.hostname;
+
+  // Remove 'www.' if present
+  hostname = hostname.replace(/^www\./, "");
+
+  // For ngrok URLs, keep the full subdomain
+  if (hostname.endsWith("ngrok-free.app") || hostname.endsWith("ngrok.io")) {
+    return hostname;
+  }
+
+  // For other URLs, extract the RP ID (usually the registrable domain)
+  const parts = hostname.split(".");
+  if (parts.length > 2) {
+    // Return the last two parts for domains like 'example.co.uk'
+    return parts.slice(-2).join(".");
+  }
+
+  // Return the full hostname for simple domains like 'example.com'
+  return hostname;
+}
+
+// Usage
+var rpID = extractRPID(window.appEnv.PHX_HOST);
+console.log("Extracted RP ID:", rpID);
 
 document.addEventListener("DOMContentLoaded", () => {
   const registrationForm = document.forms.namedItem("registration-form");
@@ -217,7 +251,7 @@ async function loginWebAuthnAccount(form: HTMLFormElement, condition: Boolean) {
     const opts: VerifyAuthenticationResponseOpts = {
       response: asseResp,
       expectedChallenge: options.challenge,
-      expectedOrigin: "http://localhost:4000",
+      expectedOrigin: `https://${rpID}`,
       expectedRPID: rpID,
       authenticator: credential.device,
       requireUserVerification: false,
