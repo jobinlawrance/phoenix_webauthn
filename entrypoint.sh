@@ -23,4 +23,4 @@ if [[ -z `psql -Atqc "\\list $PGDATABASE"` ]]; then
   echo "Database $PGDATABASE created."
 fi
 
-exec mix phx.server
+exec MIX_ENV=prod mix phx.server
