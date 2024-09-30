@@ -28,8 +28,7 @@ RUN MIX_ENV=prod mix tailwind.install
 # Copy the rest of the files
 COPY . .
 
-RUN mix assets.deploy
-RUN mix compile
+RUN MIX_ENV=prod mix assets.deploy
 
 # Compile the project
 RUN MIX_ENV=prod mix compile
