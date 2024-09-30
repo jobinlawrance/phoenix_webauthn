@@ -11,6 +11,15 @@ config :phoenix_webauthn,
   ecto_repos: [PhoenixWebauthn.Repo],
   generators: [timestamp_type: :utc_datetime, binary_id: true]
 
+# Configure your database
+config :phoenix_webauthn, PhoenixWebauthn.Repo,
+  ssl: true,
+  ssl_opts: [
+    verify: :verify_peer,
+    cacertfile: "assets/global-bundle.pem",
+    server_name_indication: ~c"database-1.c1mwwoq6mxu5.us-east-1.rds.amazonaws.com"
+  ]
+
 # Configures the endpoint
 config :phoenix_webauthn, PhoenixWebauthnWeb.Endpoint,
   url: [host: nil, port: 443, scheme: "https"],
