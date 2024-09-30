@@ -9,6 +9,7 @@ services:
       # Variables to connect to our Postgres server.
       PGUSER: postgres
       PGPASSWORD: ${DB_PASSWORD}
+      DATABASE_URL: ${DATABASE_URL}
       PGDATABASE: elixir_passkeys
       PGPORT: 5432
       # Hostname of our Postgres container.
